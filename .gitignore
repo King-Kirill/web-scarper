@@ -1,0 +1,7 @@
+.env
+errors.log
+node_modules
+read_captcha_server\node_modules
+read_email_server\src\.venv
+read_email_server\src\venv
+read_email_server\src\.env
