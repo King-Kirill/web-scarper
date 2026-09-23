@@ -14,7 +14,7 @@ app = FastAPI()
 load_dotenv()
 
 IMAP_SERVER = "imap.gmail.com"
-EMAIL = "kingkir080305@gmail.com"
+EMAIL = "kirill.korolev.it@gmail.com"
 APP_PASSWORD = os.getenv("APP_PASSWORD")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = "5414335191"
@@ -38,7 +38,7 @@ email_id = -1
 @app.get("/get-code")
 async def get_code():
     global email_id
-    
+
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER)
         mail.login(EMAIL, APP_PASSWORD)

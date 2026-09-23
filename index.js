@@ -1,44 +1,30 @@
-import puppeteer from 'puppeteer';
-import { entrance, parse_vacancies } from './operations.js';
-import { sleep, randomSleep, unread_checkbox, answer_to_unread_messages } from './functions.js';
-import fs from 'fs';
 
-// Launching the browser and open a new blank page
-const browser = await puppeteer.launch({headless: false, timeout: 3000});
-const page = await browser.newPage();
+import { page, browser, createPageActions, randomSleep } from './scarper_operations.js'
+import { entrance, parse_vacancies } from './page_operations.js';
+import { unread_checkbox } from './functions.js';
+
+// initialising scarper methods
+const actions = createPageActions(page);
 
 // navigate the page to a URL
-await page.goto('https://hh.ru/');
-
-await sleep(10000); // 10 seconds pause
+await actions.goto('https://hh.ru/');
 
 // press cookie acceptance
-await page.click('button[data-qa="cookies-policy-informer-accept"]');
+await actions.click('button[data-qa="cookies-policy-informer-accept"]');
 
-await sleep(10000);
-
-// setting screen size
-await page.setViewport({width: 1920, height: 1080});
-
-await sleep(5000); // 5 seconds pause
+await page.setViewport({width: 1920, height: 1080})
 
 // auth
-await entrance(page);
-
-await sleep(10000);
+await entrance();
 
 // initialize unread messages to show only unread ones
-await unread_checkbox(page);
-
-await sleep(5000); // 5 seconds pause
+await unread_checkbox();
 
 // vacansy responds
 while(browser)
 {
-    await parse_vacancies(page);
+    await parse_vacancies();
     await randomSleep();
 }
-
-await sleep(30000);
 
 await browser.close();
