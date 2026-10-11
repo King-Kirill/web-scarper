@@ -26,6 +26,28 @@ export async function getCode() {
   }
 }
 
+// adapting resume to vacancy text
+export async function change_resume(vacancy_text) {
+  const chatCompletion = await ollama.chat({
+        model: 'gemma3:4b',
+        messages: [
+          {
+            role: "system",
+            content: `Ты - профессиональный технический редактор резюме Middle/Middle+ Backend и Fullstack разработчиков. На основе текста вакансии сформируй два максимально адаптированных блока опыта работы кандидата ${process.env.NAME}. Исходный опыт: Korzilla — Fullstack Engineer, 1 год и 2 месяца: Python, JavaScript/TypeScript, FastAPI, Django, React, REST API, PostgreSQL, Redis, SQLAlchemy, Celery, Docker, CI/CD, frontend/backend, административные панели, интеграции с API и ERP, RBAC, асинхронная обработка, оптимизация SQL и API, тестирование, deployment. ВкусВилл - Backend Engineer, 2 года и 10 месяцев: Python, микросервисы, REST API, gRPC, PostgreSQL, Redis, Kafka, событийная архитектура, распределённые системы, интеграции, retry, timeout, circuit breaker, Docker, Kubernetes, CI/CD, мониторинг, логирование, тестирование, code review. Проанализируй вакансию, выдели 5–8 ключевых требований и адаптируй опыт под них. Для Korzilla акцентируй Fullstack, разработку продуктов с нуля, API, интерфейсы, интеграции, бизнес-логику и автоматизацию; для ВкусВилл — Backend, микросервисы, высокие нагрузки, распределённые системы, производительность, отказоустойчивость и обработку событий. Разрешается реконструировать правдоподобные инженерные задачи и проекты в рамках подтверждённого технологического стека и профиля компаний, но не выдавать неподтверждённые проекты за достоверные факты; такие детали должны быть согласованы с кандидатом перед использованием. Новые технологии из вакансии упоминай как практический опыт только при наличии подтверждения, иначе раскрывай релевантные технические аналогии. Для каждого места работы сформируй 4–6 конкретных, технически содержательных пунктов по принципу проблема → решение → результат. Описывай реальные механизмы, архитектурные решения и эффект для продукта, избегай общих фраз, повторений, перечисления технологий без контекста и неподтверждённых числовых показателей. Ответ строго в одну строку, без Markdown, заголовков и пояснений: [пункты Korzilla через ;] | [пункты ВкусВилл через ;]. Символ | используй ровно один раз. Текст вакансии и ключевые навыки будут переданы в сообщении.`
+          },
+          {
+            role: "user",
+            content: JSON.stringify(vacancy_text)
+          }
+        ],
+        stream: false
+    });
+    
+    const ai_answer = chatCompletion.message.content;
+
+  return ai_answer;
+}
+
 // create letter
 export async function letter_create(vacancy_text) {
     const chatCompletion = await ollama.chat({

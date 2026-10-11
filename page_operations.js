@@ -1,7 +1,7 @@
 // page operations
 import dotenv from 'dotenv';
 import { page, captcha_exists, randomSleep, createPageActions } from './scarper_operations.js'
-import { letter_create, answer_question, sleep, getCode, answer_to_unread_messages } from './functions.js';
+import { letter_create, answer_question, sleep, getCode, answer_to_unread_messages, change_resume } from './functions.js';
 import fs from 'node:fs/promises';
 
 dotenv.config();
@@ -58,6 +58,61 @@ export async function entrance()
     await page.keyboard.type(code);
 }
 
+// updating resume function
+async function update_resume(vacancy_data, vacancy_title)
+{
+    // going to resume page
+    await actions.goto('https://hh.ru/resume/f06fb6acff110076d80039ed1f5a7366347134?hhtmFrom=main');
+
+    // getting new resume object
+    const response = await change_resume(vacancy_data);
+
+    // converting response
+    const [korzilla, vkusvill] = response
+        .split("|")
+        .map(block => block.trim());
+
+    const korzillaTasks = korzilla
+        .split(";")
+        .map(task => task.trim())
+        .filter(Boolean);
+
+    const vkusvillTasks = vkusvill
+        .split(";")
+        .map(task => task.trim())
+        .filter(Boolean);
+
+    await actions.click('button[data-qa="edit-experience-button-0"]');
+
+    await actions.click(`textarea[data-qa="resume-editor-experience-description-input"]`);
+
+    for (let i = 0; i < korzillaTasks.length(); i++) {
+        await actions.type(korzillaTasks[i]);
+        await actions.type("\n");
+    }
+
+    // going to resume page
+    await actions.goto('https://hh.ru/resume/f06fb6acff110076d80039ed1f5a7366347134?hhtmFrom=main');
+
+    await actions.click('button[data-qa="edit-experience-button-1"]');
+
+    await actions.click(`textarea[data-qa="resume-editor-experience-description-input"]`);
+
+    for (let i = 0; i < vkusvillTasks.length(); i++) {
+        await actions.type(vkusvillTasks[i]);
+        await actions.type("\n");
+    }
+
+    // changing title
+    await actions.goto('https://hh.ru/resume/edit/f06fb6acff110076d80039ed1f5a7366347134/position');
+
+    await actions.click('input[data-qa="resume-edit-title-suggest"]');
+
+    await actions.type(vacancy_title);
+
+    await actions.click('button[data-qa="resume-partial-edit-save"]');
+}
+
 export async function parse_vacancies()
 {
     try{
@@ -65,6 +120,10 @@ export async function parse_vacancies()
         await actions.goto('https://hh.ru/search/vacancy?resume=f06fb6acff110076d80039ed1f5a7366347134&hhtmFromLabel=tab_byResume&hhtmFrom=main');
 
         await actions.click('button[data-qa="header-search-filters-button"]');
+
+        await actions.click('input[data-qa="vacancy-search-text-input"]');
+
+        await actions.type('Python разработчик');
 
         await actions.click('input[data-qa="search-filter-work_format-value-REMOTE"]');
 
@@ -114,7 +173,7 @@ export async function parse_vacancies()
 
                 if(!vacancy_text_div)
                 {
-                    vacancy_text = "Придумай стандартное сопроводительное письмо, т.к текст вакансии пуст";
+                    vacancy_text = "Опиши стандартный опыт, т.к текст вакансии пуст";
                 }
                 else
                 {
@@ -127,7 +186,7 @@ export async function parse_vacancies()
 
                 if(!key_skills_divs)
                 {
-                    key_skills_text = ['python', 'postgresql', 'ci/cd', 'c++', 'sqlalchemy', 'fastapi', 'react', 'javascript', 'typescript', 'django'];
+                    key_skills_text = ['python', 'postgresql', 'ci/cd', 'kafka', 'rabbitmq', 'celery', 'sqlalchemy', 'fastapi', 'react', 'javascript', 'typescript', 'django'];
                 }
                 else
                 {
@@ -155,6 +214,25 @@ export async function parse_vacancies()
 
                 return salary_text;
             });
+
+            const vacancy_title = await page.evaluate(() => {
+                // getting vacancy salary
+                const title_selector = document.querySelector('h1[data-qa="vacancy-title"]');
+
+                if(!title_selector)
+                {
+                    return "Fullstack разработчик";
+                }
+
+                const title = title_selector.textContent.trim();
+
+                return title;
+            });
+
+            // updating resume
+            await update_resume(vacancy_data, vacancy_title);
+
+            await actions.goto(first_link);
 
             const letter = await letter_create(vacancy_data, vacancy_salary);
 
