@@ -577,7 +577,7 @@ export async function parse_vacancies(vacancies_counter)
                 }
             }
 
-            if(vacancies_counter == 1)
+            if(vacancies_counter % 5 === 0)
             {
                 // check unread messages after every 5 vacancies
                 await answer_to_unread_messages(page);
