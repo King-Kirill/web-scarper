@@ -61,9 +61,6 @@ export async function entrance()
 // updating resume function
 async function update_resume(vacancy_data, vacancy_title)
 {
-    // going to resume page
-    await actions.goto('https://hh.ru/resume/f06fb6acff110076d80039ed1f5a7366347134?hhtmFrom=main');
-
     // getting new resume object
     const response = await change_resume(vacancy_data);
 
@@ -71,7 +68,7 @@ async function update_resume(vacancy_data, vacancy_title)
     const [korzilla, vkusvill] = response
         .split("|")
         .map(block => block.trim());
-
+   
     const korzillaTasks = korzilla
         .split(";")
         .map(task => task.trim())
@@ -82,52 +79,97 @@ async function update_resume(vacancy_data, vacancy_title)
         .map(task => task.trim())
         .filter(Boolean);
 
+    // going to resume page
+    await actions.goto('https://hh.ru/resume/f06fb6acff110076d80039ed1f5a7366347134?hhtmFrom=main');
+
     await actions.click('button[data-qa="edit-experience-button-0"]');
 
-    await actions.click(`textarea[data-qa="resume-editor-experience-description-input"]`);
+    await page.evaluate(() => {
+        const textarea = document.querySelector('textarea[data-qa="resume-editor-experience-description-input"]');
+        if (!textarea) return;
 
-    for (let i = 0; i < korzillaTasks.length(); i++) {
-        await actions.type(korzillaTasks[i]);
-        await actions.type("\n");
+        const setter = Object.getOwnPropertyDescriptor(
+            HTMLTextAreaElement.prototype,
+            'value'
+        ).set;
+
+        setter.call(textarea, '');
+
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    await actions.click('textarea[data-qa="resume-editor-experience-description-input"]');
+
+    await fs.appendFile(
+        'responds.txt',
+        `vacancy title - ${vacancy_title}\n1-st company experience:\n`
+    );
+
+    for (let i = 0; i < korzillaTasks.length; i++) {
+        await actions.type(`${korzillaTasks[i]}\n\n`);
+        await fs.appendFile(
+            'responds.txt',
+            `${korzillaTasks[i]}\n`
+        );
     }
 
-    // going to resume page
+    await actions.click('button[data-qa="profile-layout-save-button"]');
+
     await actions.goto('https://hh.ru/resume/f06fb6acff110076d80039ed1f5a7366347134?hhtmFrom=main');
 
     await actions.click('button[data-qa="edit-experience-button-1"]');
 
-    await actions.click(`textarea[data-qa="resume-editor-experience-description-input"]`);
+    await page.evaluate(() => {
+        const textarea = document.querySelector('textarea[data-qa="resume-editor-experience-description-input"]');
+        if (!textarea) return;
 
-    for (let i = 0; i < vkusvillTasks.length(); i++) {
-        await actions.type(vkusvillTasks[i]);
-        await actions.type("\n");
+        const setter = Object.getOwnPropertyDescriptor(
+            HTMLTextAreaElement.prototype,
+            'value'
+        ).set;
+
+        setter.call(textarea, '');
+
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    await actions.click('textarea[data-qa="resume-editor-experience-description-input"]');
+
+    await fs.appendFile(
+        'responds.txt',
+        `\n2-nd company experience:\n`
+    );
+
+    for (let i = 0; i < vkusvillTasks.length; i++) {
+        await actions.type(`${vkusvillTasks[i]}\n\n`);
+        await fs.appendFile(
+            'responds.txt',
+            `${vkusvillTasks[i]}\n`
+        );
     }
+
+    await actions.click('button[data-qa="profile-layout-save-button"]');
 
     // changing title
     await actions.goto('https://hh.ru/resume/edit/f06fb6acff110076d80039ed1f5a7366347134/position');
 
     await actions.click('input[data-qa="resume-edit-title-suggest"]');
+    await page.keyboard.down('Control');
+    await page.keyboard.press('A');
+    await page.keyboard.up('Control');
 
     await actions.type(vacancy_title);
 
     await actions.click('button[data-qa="resume-partial-edit-save"]');
 }
 
-export async function parse_vacancies()
+export async function parse_vacancies(vacancies_counter)
 {
     try{
         // navigate to page with vacancies list
-        await actions.goto('https://hh.ru/search/vacancy?resume=f06fb6acff110076d80039ed1f5a7366347134&hhtmFromLabel=tab_byResume&hhtmFrom=main');
-
-        await actions.click('button[data-qa="header-search-filters-button"]');
-
-        await actions.click('input[data-qa="vacancy-search-text-input"]');
-
-        await actions.type('Python разработчик');
-
-        await actions.click('input[data-qa="search-filter-work_format-value-REMOTE"]');
-
-        await actions.click('button[data-qa="search-drawer-filters-submit"]');
+        await actions.goto('https://hh.ru/search/vacancy?hhtmFromLabel=drawer_filter&hhtmFrom=vacancy_search_list&search_field=name&search_field=company_name&search_field=description&work_format=REMOTE&enable_snippets=true&hhtmSource=vacancy_search_list&hhtmSourceLabel=vacancy_search_list&text=Python+developer');
     
         // getting vacancies refs list
         const links = await page.evaluate(() => {
@@ -151,10 +193,14 @@ export async function parse_vacancies()
             return Array.from(hrefs);
         });
 
-        let vacancies_counter = 0;
-
         for(const link of links)
         {
+            // writing to local file all our responds to vacancies
+            await fs.appendFile(
+                'responds.txt',
+                `------------------------------\nvacancy ref - ${link}\n`
+            );
+
             const url = new URL(link);
             const vacancyId = url.searchParams.get('vacancyId');
 
@@ -207,7 +253,7 @@ export async function parse_vacancies()
 
                 if(!salary_selector)
                 {
-                    return "от 150 000 до 200 000 рублей в месяц";
+                    return "от 180 000 до 250 000 рублей в месяц";
                 }
 
                 const salary_text = salary_selector.textContent.trim();
@@ -221,7 +267,7 @@ export async function parse_vacancies()
 
                 if(!title_selector)
                 {
-                    return "Fullstack разработчик";
+                    return "Python разработчик";
                 }
 
                 const title = title_selector.textContent.trim();
@@ -448,17 +494,32 @@ export async function parse_vacancies()
                 });
 
                 if (respondBtn) {
-                    await respondBtn.asElement().click();
+                    try{
+                        await respondBtn.asElement().click();
 
-                    await captcha_exists();
+                        vacancies_counter += 1;
 
-                    // check if found a banner with relocation warning
-                    const warningButton_inner = await page.$('button[data-qa="relocation-warning-confirm"]');
-
-                    if (warningButton_inner) {
-                        await warningButton_inner.click();
+                        await fs.appendFile(
+                            'responds.txt',
+                            `------------------------------\n\n\n`
+                        );
 
                         await captcha_exists();
+
+                        // check if found a banner with relocation warning
+                        const warningButton_inner = await page.$('button[data-qa="relocation-warning-confirm"]');
+
+                        if (warningButton_inner) {
+                            await warningButton_inner.click();
+
+                            await captcha_exists();
+                        }
+                    }
+                    catch(error){
+                        await fs.appendFile(
+                            'errors.log',
+                            `[${new Date().toISOString()}] ${error.stack}\n\n`
+                        );
                     }
                 } else {
                     continue;
@@ -482,7 +543,7 @@ export async function parse_vacancies()
                     // waiting for selector to appear
                     await page.waitForSelector(
                         'iframe.chatik-integration-iframe.chatik-integration-iframe_loaded',
-                        { visible: true, timeout: 3000 }
+                        { visible: true, }
                     );
                     
                     // find iframe
@@ -516,14 +577,10 @@ export async function parse_vacancies()
                 }
             }
 
-            if(vacancies_counter >= 5)
+            if(vacancies_counter == 1)
             {
                 // check unread messages after every 5 vacancies
                 await answer_to_unread_messages(page);
-                vacancies_counter = 0;
-            }
-            else{
-                vacancies_counter += 1;
             }
         }
     }

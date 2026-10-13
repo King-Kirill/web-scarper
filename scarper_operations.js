@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer';
 import dotenv from 'dotenv';
+import fs from 'node:fs';
 import { Groq } from 'groq-sdk';
+import { timeout } from 'puppeteer-core';
 
 dotenv.config();
 
