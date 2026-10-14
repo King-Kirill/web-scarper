@@ -200,9 +200,10 @@ export async function parse_vacancies(vacancies_counter)
                 'responds.txt',
                 `------------------------------\nvacancy ref - ${link}\n`
             );
-
-            const url = new URL(link);
-            const vacancyId = url.searchParams.get('vacancyId');
+            
+            const url = new URL("https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list");
+            // const vacancyId = url.searchParams.get('vacancyId');
+            const vacancyId = "138414447";
 
             // flag to check if letter was already sent
             let letter_is_send = false;
@@ -281,17 +282,48 @@ export async function parse_vacancies(vacancies_counter)
             await actions.goto(first_link);
 
             const letter = await letter_create(vacancy_data, vacancy_salary);
-
+            
             await actions.goto(link);
 
             // check if found a banner with relocation warning
-            const warningButton = await page.$('button[data-qa="relocation-warning-confirm"]');
+            try {
+                await page.waitForFunction(() => {
+                    const button = document.querySelector('button[data-qa="relocation-warning-confirm"]');
 
-            if (warningButton) {
-                await warningButton.click();
+                    if (!button) return false;
+
+                    button.click();
+                    return true;
+                }, { timeout: 10000 });
+
+                await captcha_exists();
+ 
+            } catch (error) {
+                await fs.appendFile(
+                    'errors.log',
+                    `[${new Date().toISOString()}] ${error.stack}\n\n`
+                );
             }
 
-            await captcha_exists();
+            // check if found a banner with experience warning
+            try {
+                await page.waitForFunction(() => {
+                    const button = document.querySelector('button[data-qa="vacancy-response-submit-popup"]');
+
+                    if (!button) return false;
+                    
+                    button.click();
+                    return true;
+                }, { timeout: 10000 });
+
+                await captcha_exists();
+
+            } catch (error) {
+                await fs.appendFile(
+                    'errors.log',
+                    `[${new Date().toISOString()}] ${error.stack}\n\n`
+                );
+            }
 
             const form_data = await page.evaluate(() => {
                 // checking if after click to respond, it forwards us to form page
@@ -495,9 +527,9 @@ export async function parse_vacancies(vacancies_counter)
 
                 if (respondBtn) {
                     try{
-                        await respondBtn.asElement().click();
+                        console.log("checking warnings!");
 
-                        vacancies_counter += 1;
+                        await respondBtn.asElement().click();
 
                         await fs.appendFile(
                             'responds.txt',
@@ -505,15 +537,6 @@ export async function parse_vacancies(vacancies_counter)
                         );
 
                         await captcha_exists();
-
-                        // check if found a banner with relocation warning
-                        const warningButton_inner = await page.$('button[data-qa="relocation-warning-confirm"]');
-
-                        if (warningButton_inner) {
-                            await warningButton_inner.click();
-
-                            await captcha_exists();
-                        }
                     }
                     catch(error){
                         await fs.appendFile(
@@ -576,6 +599,8 @@ export async function parse_vacancies(vacancies_counter)
                     continue;
                 }
             }
+
+            vacancies_counter++;
 
             if(vacancies_counter % 5 === 0)
             {
