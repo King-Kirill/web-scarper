@@ -1,7 +1,7 @@
 
 import { page, browser, createPageActions, randomSleep } from './scarper_operations.js'
 import { entrance, parse_vacancies } from './page_operations.js';
-import { unread_checkbox, answer_to_unread_messages, sleep } from './functions.js';
+import { answer_to_unread_messages, sleep } from './functions.js';
 
 // initialising scarper methods
 const actions = createPageActions(page);
@@ -17,9 +17,6 @@ await page.setViewport({width: 1920, height: 1080})
 // auth
 await entrance();
 
-// initialize unread messages to show only unread ones
-await unread_checkbox(page);
-
 // vacansy responds
 let vacancies_counter = 0;
 let drop_counter = false;
@@ -32,10 +29,6 @@ while(browser)
         setTimeout(() => {
             drop_counter = true;
         }, 24 * 60 * 60 * 1000);
-        
-        await answer_to_unread_messages(page);
-        await sleep(60 * 10000);
-        await randomSleep();
 
         if(drop_counter)
         {

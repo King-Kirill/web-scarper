@@ -55,7 +55,7 @@ export async function entrance()
     await sleep(60000);
 
     const code = await getCode();
-    await page.keyboard.type(code);
+    await actions.type(code);
 }
 
 // updating resume function

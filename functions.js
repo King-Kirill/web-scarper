@@ -1,5 +1,5 @@
 // api and functions file
-import { page, createPageActions, randomSleep, captcha_exists } from './scarper_operations.js'
+import { page, createPageActions } from './scarper_operations.js'
 import "dotenv/config";
 
 // lets just give it a shot on a free tire
@@ -87,59 +87,6 @@ export async function answer_questions_chat(messages) {
   return ai_answer;
 }
 
-// press checkbox to read only unread messages
-export async function unread_checkbox(page)
-{
-  try{
-    // waiting for selector to appear
-    await page.waitForSelector(
-      'button[data-qa="chatikActivator-button"]',
-      { visible: true, }
-    );
-
-    const chatik_btn = await page.$('button[data-qa="chatikActivator-button"]');
-
-    if (chatik_btn) {
-      await chatik_btn.asElement().click();
-
-      await randomSleep();
-
-      // waiting for selector to appear
-      await page.waitForSelector(
-        'iframe.chatik-integration-iframe.chatik-integration-iframe_loaded',
-        { visible: true, }
-      );
-
-      // find iframe
-      const iframeHandle = await page.$('iframe.chatik-integration-iframe.chatik-integration-iframe_loaded');
-
-      if(iframeHandle)
-      {
-        const frame = await iframeHandle.contentFrame();
-
-        let back_btn = await frame.$('button[data-qa="chatik-back-to-chats-button"]');
-
-        if(back_btn)
-        {
-          await back_btn.asElement().click();
-          await captcha_exists();
-        }
-
-        const only_unread_btn = await frame.$('input[data-qa="chatik-checkbox-only-unread"]');
-
-        if(only_unread_btn)
-        {
-          await only_unread_btn.asElement().click();
-        }
-      }
-    }
-  }
-  catch(error)
-  {
-    console.log(error);
-  }
-}
-
 // answering to unread messages
 export async function answer_to_unread_messages(page)
 {
@@ -147,109 +94,127 @@ export async function answer_to_unread_messages(page)
     // waiting for selector to appear
     await actions.goto("https://hh.ru/chat")
 
+    // click to check only unread chats
+    const selector = 'input[data-qa="chatik-checkbox-only-unread"]';
+
+    const isChecked = await page.$eval(
+      selector,
+      el => el.checked
+    );
+
+    if (!isChecked) {
+      await actions.click(selector);
+    }
+
     // parsing chats with unread messages
-    const links = (await frame.$$('a[id^="chat-cell-"]')).slice(0, 10);
+    const links = (await page.$$('a[id^="chat-cell-"]')).slice(0, 10);
 
     const hrefs = await Promise.all(
       links.map(link => link.evaluate(el => el.href))
     );
 
     for (const link of hrefs) {
-      // going to chat page
-      await actions.goto(link);
+      try{
+        // going to chat page
+        await actions.goto(link);
 
-      // waiting for selector to appear
-      await page.waitForSelector(
-        'textarea',
-        { visible: true, }
-      );
+        // waiting for selector to appear
+        await page.waitForSelector(
+          'textarea',
+          { visible: true, }
+        );
 
-      const textarea_obj = await page.$('textarea');
+        const textarea_obj = await page.$('textarea');
 
-      if (!textarea_obj) {
-        continue;
-      }
+        if (!textarea_obj) {
+          continue;
+        }
 
-      const chat_messages = [];
+        const chat_messages = [];
 
-      const message_classes = await page.evaluate(() => {
-        return [...document.querySelectorAll('span[data-qa="chat-bubble-text"]')]
-        .map(span => span.closest("div").getAttribute("data-qa"))
-      });
+        const message_classes = await page.evaluate(() => {
+          return [...document.querySelectorAll('span[data-qa="chat-bubble-text"]')]
+          .map(span => span.closest("div").getAttribute("data-qa"))
+        });
 
-      for(const message_class of message_classes)
-      {
-        const chat_obj = await page.evaluate((message_class) => {
-          const class_name = document.querySelector(`div[data-qa="${message_class}"]`);
-
-          if(class_name)
-          {
-            const closest_div = class_name.closest("div").parentElement.className;
-
-            const message_element = document.querySelector(`div[data-qa="${message_class}"]`);
-
-            if(message_element)
-            {
-              const message_text = message_element.querySelector(`span[data-qa="chat-bubble-text"]`).textContent.trim();
-
-              let role = "assistant";
-
-              if (
-                closest_div.includes("left") ||
-                closest_div.includes("bot")
-              ) {
-                role = "user";
-              }
-
-              const obj_to_return = {
-                role: role,
-                content: message_text,
-              };
-
-              return obj_to_return; 
-            }
-          }
-          else
-          {
-            return false;
-          }
-        }, message_class);
-
-        if(chat_obj)
+        for(const message_class of message_classes)
         {
-          chat_messages.push(chat_obj);
+          const chat_obj = await page.evaluate((message_class) => {
+            const class_name = document.querySelector(`div[data-qa="${message_class}"]`);
+
+            if(class_name)
+            {
+              const closest_div = class_name.closest("div").parentElement.className;
+
+              const message_element = document.querySelector(`div[data-qa="${message_class}"]`);
+
+              if(message_element)
+              {
+                const message_text = message_element.querySelector(`span[data-qa="chat-bubble-text"]`).textContent.trim();
+
+                let role = "assistant";
+
+                if (
+                  closest_div.includes("left") ||
+                  closest_div.includes("bot")
+                ) {
+                  role = "user";
+                }
+
+                const obj_to_return = {
+                  role: role,
+                  content: message_text,
+                };
+
+                return obj_to_return; 
+              }
+            }
+            else
+            {
+              return false;
+            }
+          }, message_class);
+
+          if(chat_obj)
+          {
+            chat_messages.push(chat_obj);
+          }
+        }
+
+        // sending chat messages to ai agent
+        const ai_answer = await answer_questions_chat(chat_messages);
+
+        if(ai_answer === "success_vacancy")
+        {
+          await fetch("http://localhost:8000/send-vacancy", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              url: link
+            })
+          });
+        }
+        else
+        {
+          // find textarea and type letter
+          await page.evaluate((ai_answer) => {
+            const textarea = document.querySelector('textarea[data-qa="text-input"]');
+            if (textarea) {
+              textarea.value = ai_answer;
+              textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }, ai_answer);
+
+          await actions.type(' ');
+                
+          await actions.click('button[data-qa="chatik-do-send-message"]');
         }
       }
-
-      // sending chat messages to ai agent
-      const ai_answer = await answer_questions_chat(chat_messages);
-
-      if(ai_answer === "success_vacancy")
+      catch(error)
       {
-        await fetch("http://localhost:8000/send-vacancy", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            url: link
-          })
-        });
-      }
-      else
-      {
-        // find textarea and type letter
-        await page.evaluate((ai_answer) => {
-          const textarea = document.querySelector('textarea[data-qa="chatik-new-message-text"]');
-          if (textarea) {
-            textarea.value = ai_answer;
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-        }, ai_answer);
-
-        await actions.type(' ');
-                
-        await actions.click('button[data-qa="chatik-do-send-message"]');
+        console.log(error);
       }
     }
   }
