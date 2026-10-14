@@ -121,11 +121,6 @@ vacancy title - MlOps inference engineer
 Настройка контейнеризации и оркестрации сервисов с использованием Docker и Kubernetes в контуре CI/CD для автоматизации деплоя
 Интеграция систем мониторинга и логирования для контроля производительности микросервисов и диагностики инцидентов в продакшене
 ------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138478077&employerId=1035255&hhtmFrom=vacancy_search_list
-vacancy title - Data Scientist (ML / AI Agents / LangGraph)
-1-st company experience:
-Fullstack Engineer в компании Korzilla, где на протяжении года и двух месяцев занимался разработкой клиентской и серверной части веб-приложений, проектированием REST API и созданием административных панелей. Успешно реализовывал бизнес-логику, настраивал интеграции со сторонними сервисами и ERP-системами, а также отвечал за развёртывание и поддержку проектов с использованием Docker и CI/CD. Разработал архитектуру и интерфейс для панели управления с гибким разграничением прав доступа на основе RBAC, что позволило структурировать работу администраторов и повысить безопасность системы. Спроектировал и внедрил REST API для взаимодействия фронтенда на React и бэкенда на Python с использованием FastAPI и Django, обеспечив высокую скорость отклика интерфейса. Оптимизировал сложные SQL-запросы к PostgreSQL и настроил асинхронную обработку задач через Celery с брокером сообщений Redis, что сократило время формирования тяжелых отчетов. Реализовал комплекс модульных и интеграционных тестов, повысив общую надежность кода перед выкатом в production. Настроил пайплайны CI/CD в Docker-окружении, автоматизировав сборку, тестирование и деплой релизов, что снизило трудозатраты команды на ручные операции
-------------------------------
 vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138363266&employerId=13078735&hhtmFrom=vacancy_search_list
 vacancy title - Fullstack Engineer
 1-st company experience:
@@ -211,17 +206,3 @@ Backend-разработка отказоустойчивых распредел
 написание комплексных модульных и интеграционных тестов для проверки критических сценариев бизнес-логики
 участие в проектировании событийно-ориентированной архитектуры для снижения связанности сервисов и повышения масштабируемости платформы
 проведение регулярных код-ревью и рефакторинг устаревших модулей для поддержания чистоты кода и минимизации технического долга
-------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list
-------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list
-------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list
-------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list
-------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list
-------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list
-------------------------------
-vacancy ref - https://hh.ru/applicant/vacancy_response?vacancyId=138442795&employerId=5162680&hhtmFrom=vacancy_search_list

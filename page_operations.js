@@ -201,9 +201,8 @@ export async function parse_vacancies(vacancies_counter)
                 `------------------------------\nvacancy ref - ${link}\n`
             );
             
-            const url = new URL("https://hh.ru/applicant/vacancy_response?vacancyId=138414447&employerId=3452369&hhtmFrom=vacancy_search_list");
-            // const vacancyId = url.searchParams.get('vacancyId');
-            const vacancyId = "138414447";
+            const url = new URL(link);
+            const vacancyId = url.searchParams.get('vacancyId');
 
             // flag to check if letter was already sent
             let letter_is_send = false;
